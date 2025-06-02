@@ -80,9 +80,7 @@ export function Chat() {
     handleFileUpload,
     handleFileRemove,
   } = useFileUpload()
-  const [selectedModel, setSelectedModel] = useState(
-    currentChat?.model || user?.preferred_model || MODEL_DEFAULT
-  )
+  const selectedModel = "gemini-2.5-flash-preview-05-20";
   const { currentAgent } = useAgent()
   const systemPrompt =
     currentAgent?.system_prompt || user?.system_prompt || SYSTEM_PROMPT_DEFAULT
@@ -127,15 +125,12 @@ export function Chat() {
     setHasDialogAuth,
   })
 
-  const { handleInputChange, handleModelChange, handleDelete, handleEdit } =
+  const { handleInputChange, handleDelete, handleEdit } =
     useChatHandlers({
       messages,
       setMessages,
       setInput,
-      setSelectedModel,
-      selectedModel,
       chatId,
-      updateChatModel,
       user,
     })
 
@@ -426,8 +421,6 @@ export function Chat() {
           hasSuggestions={
             preferences.promptSuggestions && !chatId && messages.length === 0
           }
-          onSelectModel={handleModelChange}
-          selectedModel={selectedModel}
           isUserAuthenticated={isAuthenticated}
           stop={stop}
           status={status}

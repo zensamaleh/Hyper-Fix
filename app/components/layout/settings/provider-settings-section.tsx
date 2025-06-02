@@ -53,50 +53,57 @@ export function ProviderSettingsSection() {
       {/* Built-in Providers */}
       <div className="space-y-4">
         <h4 className="text-sm font-medium">Built-in Providers</h4>
-        {providers.map((provider) => (
-          <div
-            key={provider.id}
-            className="flex items-center justify-between rounded-lg border p-4"
-          >
-            <div className="space-y-1">
-              <div className="font-medium">{provider.name}</div>
-              <div className="text-muted-foreground text-sm">
-                {provider.type === "ollama"
-                  ? "Local AI models"
-                  : `${provider.name} API`}
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              {provider.type === "ollama" && (
-                <div className="space-y-2">
-                  <Label htmlFor={`${provider.id}-url`} className="text-sm">
-                    Base URL
-                  </Label>
-                  <Input
-                    id={`${provider.id}-url`}
-                    value={provider.baseUrl || ""}
-                    onChange={(e) =>
-                      updateProvider(provider.id, { baseUrl: e.target.value })
-                    }
-                    placeholder="http://localhost:11434"
-                    className="w-48"
-                  />
+        {providers.map((provider) => {
+          const showBaseUrl = provider.type === "ollama" || provider.type === "google"
+          return (
+            <div
+              key={provider.id}
+              className="flex items-center justify-between rounded-lg border p-4"
+            >
+              <div className="space-y-1">
+                <div className="font-medium">{provider.name}</div>
+                <div className="text-muted-foreground text-sm">
+                  {provider.type === "ollama"
+                    ? "Local AI models"
+                    : `${provider.name} API`}
                 </div>
-              )}
-              <div className="flex flex-col items-center space-y-1">
-                <Switch
-                  checked={provider.enabled}
-                  onCheckedChange={(enabled) =>
-                    updateProvider(provider.id, { enabled })
-                  }
-                />
-                <span className="text-muted-foreground text-xs">
-                  {provider.enabled ? "Enabled" : "Disabled"}
-                </span>
+              </div>
+              <div className="flex items-center space-x-4">
+                {showBaseUrl && (
+                  <div className="space-y-2">
+                    <Label htmlFor={`${provider.id}-url`} className="text-sm">
+                      Base URL
+                    </Label>
+                    <Input
+                      id={`${provider.id}-url`}
+                      value={provider.baseUrl || ""}
+                      onChange={(e) =>
+                        updateProvider(provider.id, { baseUrl: e.target.value })
+                      }
+                      placeholder={
+                        provider.type === "ollama"
+                          ? "http://localhost:11434"
+                          : "https://generativelanguage.googleapis.com"
+                      }
+                      className="w-48"
+                    />
+                  </div>
+                )}
+                <div className="flex flex-col items-center space-y-1">
+                  <Switch
+                    checked={provider.enabled}
+                    onCheckedChange={(enabled) =>
+                      updateProvider(provider.id, { enabled })
+                    }
+                  />
+                  <span className="text-muted-foreground text-xs">
+                    {provider.enabled ? "Enabled" : "Disabled"}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Custom Providers */}

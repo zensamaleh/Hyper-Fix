@@ -32,8 +32,6 @@ type ChatInputProps = {
   onFileRemove: (file: File) => void
   onSuggestion: (suggestion: string) => void
   hasSuggestions?: boolean
-  onSelectModel: (model: string) => void
-  selectedModel: string
   isUserAuthenticated: boolean
   stop: () => void
   status?: "submitted" | "streaming" | "ready" | "error"
@@ -50,8 +48,6 @@ export function ChatInput({
   onFileRemove,
   onSuggestion,
   hasSuggestions,
-  onSelectModel,
-  selectedModel,
   isUserAuthenticated,
   stop,
   status,
@@ -72,8 +68,7 @@ export function ChatInput({
     defaultAgent: currentAgent,
   })
 
-  const selectModelConfig = getModelInfo(selectedModel)
-  const hasToolSupport = Boolean(selectModelConfig?.tools)
+  const hasToolSupport = true // Gemini 2.5 Flash supports tools
   const isOnlyWhitespace = (text: string) => !/[^\s]/.test(text)
 
   // Handle search toggle
@@ -219,28 +214,12 @@ export function ChatInput({
               <ButtonFileUpload
                 onFileUpload={onFileUpload}
                 isUserAuthenticated={isUserAuthenticated}
-                model={selectedModel}
-              />
-              <ModelSelector
-                selectedModelId={selectedModel}
-                setSelectedModelId={onSelectModel}
-                isUserAuthenticated={isUserAuthenticated}
-                className="rounded-full"
               />
               <ButtonSearch
                 isSelected={isSearchEnabled}
                 onToggle={handleSearchToggle}
                 isAuthenticated={isUserAuthenticated}
               />
-              {currentAgent && !hasToolSupport && (
-                <div className="flex items-center gap-1">
-                  <Warning className="size-4" />
-                  <p className="line-clamp-2 text-xs">
-                    {selectedModel} does not support tools. Agents may not work
-                    as expected.
-                  </p>
-                </div>
-              )}
             </div>
             <PromptInputAction
               tooltip={status === "streaming" ? "Stop" : "Send"}
@@ -248,7 +227,7 @@ export function ChatInput({
               <Button
                 size="sm"
                 className="size-9 rounded-full transition-all duration-300 ease-out"
-                disabled={!value || isSubmitting || isOnlyWhitespace(value)}
+                disabled={isSubmitting}
                 type="button"
                 onClick={handleSend}
                 aria-label={status === "streaming" ? "Stop" : "Send message"}

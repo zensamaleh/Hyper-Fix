@@ -1,77 +1,32 @@
-import { claudeModels } from "./data/claude"
-import { deepseekModels } from "./data/deepseek"
-import { grokModels } from "./data/grok"
-import { mistralModels } from "./data/mistral"
-import { ollamaModels, getOllamaModels } from "./data/ollama"
-import { openaiModels } from "./data/openai"
+import { google } from "@ai-sdk/google"
 import { ModelConfig } from "./types"
 
-// Static models (always available)
-export const STATIC_MODELS: ModelConfig[] = [
-  ...openaiModels,
-  ...mistralModels,
-  ...deepseekModels,
-  ...claudeModels,
-  ...grokModels,
-  ...ollamaModels, // Static fallback Ollama models
+// Define the Gemini model explicitly
+const GEMINI_MODEL: ModelConfig = {
+  id: "gemini-2.5-flash-preview-05-20",
+  name: "Gemini 2.5 Flash Preview",
+  provider: "Google",
+  providerId: "google",
+  contextWindow: 128000,
+  tools: true,
+  vision: true,
+  apiSdk: () => google("gemini-2.5-flash-preview-05-20")
+}
 
-  // not ready
-  // ...llamaModels,
-]
+// Only Gemini 2.5 Flash Preview 05-20 is available
+export const STATIC_MODELS: ModelConfig[] = [GEMINI_MODEL]
 
-// Dynamic models cache
-let dynamicModelsCache: ModelConfig[] | null = null
-let lastFetchTime = 0
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
-
-// Function to get all models including dynamically detected ones
+// Function to get all models
 export async function getAllModels(): Promise<ModelConfig[]> {
-  const now = Date.now()
-  
-  // Use cache if it's still valid
-  if (dynamicModelsCache && (now - lastFetchTime) < CACHE_DURATION) {
-    return dynamicModelsCache
-  }
-
-  try {
-    // Get dynamically detected Ollama models
-    const detectedOllamaModels = await getOllamaModels()
-    
-    // Combine static models (excluding static Ollama models) with detected ones
-    const staticModelsWithoutOllama = STATIC_MODELS.filter(
-      model => model.providerId !== "ollama"
-    )
-    
-    dynamicModelsCache = [
-      ...staticModelsWithoutOllama,
-      ...detectedOllamaModels,
-    ]
-    
-    lastFetchTime = now
-    return dynamicModelsCache
-  } catch (error) {
-    console.warn("Failed to load dynamic models, using static models:", error)
-    return STATIC_MODELS
-  }
+  return [GEMINI_MODEL];
 }
 
-// Synchronous function to get model info for simple lookups
-// This uses cached data if available, otherwise falls back to static models
 export function getModelInfo(modelId: string): ModelConfig | undefined {
-  // First check the cache if it exists
-  if (dynamicModelsCache) {
-    return dynamicModelsCache.find(model => model.id === modelId)
-  }
-  
-  // Fall back to static models for immediate lookup
-  return STATIC_MODELS.find(model => model.id === modelId)
+  return modelId === GEMINI_MODEL.id ? GEMINI_MODEL : undefined;
 }
 
-// For backward compatibility - static models only
-export const MODELS: ModelConfig[] = STATIC_MODELS
+// For backward compatibility
+export const MODELS: ModelConfig[] = [GEMINI_MODEL]
 
-// Function to refresh the models cache
-export function refreshModelsCache(): void {
-  dynamicModelsCache = null
-  lastFetchTime = 0
-}
+// Function to refresh the models cache - No longer needed
+export function refreshModelsCache(): void {}

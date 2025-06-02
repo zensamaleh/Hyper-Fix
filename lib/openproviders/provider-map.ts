@@ -54,7 +54,8 @@ const MODEL_PROVIDER_MAP: Record<string, Provider> = {
   "open-mixtral-8x22b": "mistral",
 
   // Google
-  "gemini-2.0-flash-001": "google",
+  "gemini-2.0-flash-001": "google", // Added Gemini 2.0 Flash
+  "gemini-2.5-flash-preview-05-20": "google", // Added Gemini 2.5 Flash Preview
   "gemini-1.5-flash": "google",
   "gemini-1.5-flash-latest": "google",
   "gemini-1.5-flash-001": "google",

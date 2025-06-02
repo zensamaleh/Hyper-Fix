@@ -24,49 +24,18 @@ import { PopoverContentAuth } from "./popover-content-auth"
 type ButtonFileUploadProps = {
   onFileUpload: (files: File[]) => void
   isUserAuthenticated: boolean
-  model: string
 }
 
 export function ButtonFileUpload({
   onFileUpload,
   isUserAuthenticated,
-  model,
 }: ButtonFileUploadProps) {
   if (!isSupabaseEnabled) {
     return null
   }
 
-  const isFileUploadAvailable = getModelInfo(model)?.vision
-
-  if (!isFileUploadAvailable) {
-    return (
-      <Popover>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <PopoverTrigger asChild>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="border-border dark:bg-secondary size-9 rounded-full border bg-transparent"
-                type="button"
-                aria-label="Add files"
-              >
-                <Paperclip className="size-4" />
-              </Button>
-            </PopoverTrigger>
-          </TooltipTrigger>
-          <TooltipContent>Add files</TooltipContent>
-        </Tooltip>
-        <PopoverContent className="p-2">
-          <div className="text-secondary-foreground text-sm">
-            This model does not support file uploads.
-            <br />
-            Please select another model.
-          </div>
-        </PopoverContent>
-      </Popover>
-    )
-  }
+  // Gemini 2.5 Flash supports file uploads
+  const isFileUploadAvailable = true;
 
   if (!isUserAuthenticated) {
     return (

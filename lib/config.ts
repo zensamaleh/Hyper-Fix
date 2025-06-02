@@ -8,22 +8,19 @@ import {
   Sparkle,
 } from "@phosphor-icons/react/dist/ssr"
 
-export const NON_AUTH_DAILY_MESSAGE_LIMIT = 5
+export const NON_AUTH_DAILY_MESSAGE_LIMIT = 56
 export const AUTH_DAILY_MESSAGE_LIMIT = 1000
-export const REMAINING_QUERY_ALERT_THRESHOLD = 2
-export const DAILY_FILE_UPLOAD_LIMIT = 5
+export const REMAINING_QUERY_ALERT_THRESHOLD = 26
+export const DAILY_FILE_UPLOAD_LIMIT = 56
 // @todo: remove this
-export const DAILY_SPECIAL_AGENT_LIMIT = 5
-export const DAILY_LIMIT_PRO_MODELS = 5
+export const DAILY_SPECIAL_AGENT_LIMIT = 56
+export const DAILY_LIMIT_PRO_MODELS = 56
 
 export const FREE_MODELS_IDS = [
-  "deepseek-r1",
-  "pixtral-large-latest",
-  "mistral-large-latest",
-  "gpt-4.1-nano",
+  "gemini-2.5-flash-preview-05-20"
 ]
 
-export const MODEL_DEFAULT = "gpt-4.1-nano"
+export const MODEL_DEFAULT = "gemini-2.5-flash-preview-05-20"
 
 export const APP_NAME = "Zola"
 export const APP_DOMAIN = "https://zola.chat"
