@@ -81,6 +81,8 @@ export function Chat() {
     handleFileRemove,
   } = useFileUpload()
   const selectedModel = "gemini-2.5-flash-preview-05-20";
+  const setSelectedModel = () => {}; // Fonction vide pour satisfaire l'interface
+  const updateChatModel = () => {}; // Fonction vide pour satisfaire l'interface
   const { currentAgent } = useAgent()
   const systemPrompt =
     currentAgent?.system_prompt || user?.system_prompt || SYSTEM_PROMPT_DEFAULT
@@ -125,14 +127,16 @@ export function Chat() {
     setHasDialogAuth,
   })
 
-  const { handleInputChange, handleDelete, handleEdit } =
-    useChatHandlers({
-      messages,
-      setMessages,
-      setInput,
-      chatId,
-      user,
-    })
+  const { handleInputChange, handleDelete, handleEdit } = useChatHandlers({
+    messages,
+    setMessages,
+    setInput,
+    chatId,
+    user,
+    selectedModel, // Ajouté pour satisfaire l'interface
+    setSelectedModel, // Ajouté pour satisfaire l'interface
+    updateChatModel, // Ajouté pour satisfaire l'interface
+  })
 
   // when chatId is null, set messages to an empty array
   useEffect(() => {
@@ -268,7 +272,6 @@ export function Chat() {
       setMessages((prev) => [...prev, optimisticMessage])
 
       const uid = await getOrCreateGuestUserId(user)
-
       if (!uid) {
         setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
         setIsSubmitting(false)
@@ -283,7 +286,6 @@ export function Chat() {
       }
 
       const currentChatId = await ensureChatExists(uid)
-
       if (!currentChatId) {
         setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
         setIsSubmitting(false)
@@ -383,7 +385,7 @@ export function Chat() {
             }}
           >
             <h1 className="mb-6 text-3xl font-medium tracking-tight">
-              What&apos;s on your mind?
+              What's on your mind?
             </h1>
           </motion.div>
         ) : (
