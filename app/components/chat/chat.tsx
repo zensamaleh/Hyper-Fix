@@ -61,7 +61,7 @@ export function Chat() {
   const {
     createNewChat,
     getChatById,
-    updateChatModel,
+    updateChatModel, // Importé depuis useChats
     isLoading: isChatsLoading,
   } = useChats()
   const currentChat = chatId ? getChatById(chatId) : null
@@ -82,7 +82,6 @@ export function Chat() {
   } = useFileUpload()
   const selectedModel = "gemini-2.5-flash-preview-05-20";
   const setSelectedModel = () => {}; // Fonction vide pour satisfaire l'interface
-  const updateChatModel = () => {}; // Fonction vide pour satisfaire l'interface
   const { currentAgent } = useAgent()
   const systemPrompt =
     currentAgent?.system_prompt || user?.system_prompt || SYSTEM_PROMPT_DEFAULT
@@ -133,9 +132,9 @@ export function Chat() {
     setInput,
     chatId,
     user,
-    selectedModel, // Ajouté pour satisfaire l'interface
-    setSelectedModel, // Ajouté pour satisfaire l'interface
-    updateChatModel, // Ajouté pour satisfaire l'interface
+    selectedModel,
+    setSelectedModel,
+    updateChatModel, // Utiliser la fonction importée depuis useChats
   })
 
   // when chatId is null, set messages to an empty array
