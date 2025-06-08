@@ -52,22 +52,19 @@ export async function POST(req: Request) {
     const userMessage = messages[messages.length - 1]
     const content = userMessage?.content?.toLowerCase() || ""
 
-    // ✅ Détection de question sur l’auteur
-    const questionAuteur =
-      content.includes("qui est l’auteur") ||
-      content.includes("qui est l'auteur") ||
-      content.includes("créateur du chatbot") ||
-      content.includes("a créé ce chatbot") ||
-      content.includes("qui a créé cette application")
+    // ✅ Détection souple de questions sur le créateur
+    const authorRegex =
+      /(qui\s+(t'?a|vous\s+a|a\s+créé|a\s+fait|a\s+conçu|est\s+l[ae]\s+créateur(?:rice)?)|t'?es\s+fait|par\s+qui\s+(t'?es|vous\s+êtes)|créé\s+par\s+qui|qui\s+est\s+(l[ae]\s+créateur(?:rice)?|l'auteur))/
 
-    if (questionAuteur) {
+    if (authorRegex.test(content)) {
       const { data } = await supabase
-        .from("app_info") // nom de la table qu'on a créée ensemble
+        .from("app_info")
         .select("value")
         .eq("key", "author")
         .single()
 
-      const authorInfo = data?.value || "Informations sur l'auteur non disponibles."
+      const authorInfo =
+        data?.value || "Informations sur l'auteur non disponibles."
 
       return new Response(
         new ReadableStream({
