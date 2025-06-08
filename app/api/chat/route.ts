@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       content.includes("qui a créé cette application")
 
     if (questionAuteur) {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("app_info") // nom de la table qu'on a créée ensemble
         .select("value")
         .eq("key", "author")
@@ -104,7 +104,6 @@ export async function POST(req: Request) {
     }
 
     let agentConfig = null
-
     if (agentId) {
       agentConfig = await loadAgent(agentId)
     }
@@ -119,8 +118,7 @@ export async function POST(req: Request) {
     const effectiveSystemPrompt =
       agentConfig?.systemPrompt || systemPrompt || SYSTEM_PROMPT_DEFAULT
 
-    let toolsToUse = undefined
-
+    let toolsToUse: ToolSet | undefined = undefined
     if (agentConfig?.mcpConfig) {
       const { tools } = await loadMCPToolsFromURL(agentConfig.mcpConfig.server)
       toolsToUse = tools
@@ -140,7 +138,7 @@ export async function POST(req: Request) {
       model: modelConfig.apiSdk(),
       system: effectiveSystemPrompt,
       messages: cleanedMessages,
-      tools: toolsToUse as ToolSet,
+      tools: toolsToUse,
       maxSteps: 10,
       onError: (err: unknown) => {
         console.error("🛑 streamText error:", err)
@@ -156,7 +154,7 @@ export async function POST(req: Request) {
             supabase,
             chatId,
             messages:
-              response.messages as unknown as import("@/app/types/api.types").Message[],
+              response.messages as import("@/app/types/api.types").Message[],
           })
         }
       },
