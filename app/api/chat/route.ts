@@ -51,6 +51,42 @@ export async function POST(req: Request) {
 
     const userMessage = messages[messages.length - 1]
 
+    // ✅ Réponse personnalisée sur l'auteur
+    const content = userMessage?.content?.toLowerCase() || ""
+    if (
+      content.includes("qui est l’auteur") ||
+      content.includes("qui est l'auteur") ||
+      content.includes("créateur du chatbot") ||
+      content.includes("a créé ce chatbot")
+    ) {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "author_info")
+        .single()
+
+      const authorInfo = data?.value || "Informations sur l'auteur non disponibles."
+
+      return new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(
+              new TextEncoder().encode(
+                `{"message":{"role":"assistant","content":${JSON.stringify(authorInfo)}}}\n`
+              )
+            )
+            controller.close()
+          },
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "X-Chat-Id": chatId,
+          },
+        }
+      )
+    }
+
     if (supabase && userMessage?.role === "user") {
       await logUserMessage({
         supabase,
@@ -91,7 +127,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Clean messages when switching between agents with different tool capabilities
     const hasTools = !!toolsToUse && Object.keys(toolsToUse).length > 0
     const cleanedMessages = cleanMessagesForTools(messages, hasTools)
 
@@ -102,8 +137,6 @@ export async function POST(req: Request) {
       system: effectiveSystemPrompt,
       messages: cleanedMessages,
       tools: toolsToUse as ToolSet,
-      // @todo: remove this
-      // hardcoded for now
       maxSteps: 10,
       onError: (err: unknown) => {
         console.error("🛑 streamText error:", err)
@@ -135,7 +168,7 @@ export async function POST(req: Request) {
       sendReasoning: true,
       sendSources: true,
     })
-    // Optionally attach chatId in a custom header.
+
     const headers = new Headers(originalResponse.headers)
     headers.set("X-Chat-Id", chatId)
 
@@ -145,7 +178,6 @@ export async function POST(req: Request) {
     })
   } catch (err: unknown) {
     console.error("Error in /api/chat:", err)
-    // Return a structured error response if the error is a UsageLimitError.
     const error = err as { code?: string; message?: string }
     if (error.code === "DAILY_LIMIT_REACHED") {
       return new Response(
