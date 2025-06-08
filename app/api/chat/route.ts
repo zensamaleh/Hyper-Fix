@@ -50,19 +50,21 @@ export async function POST(req: Request) {
     })
 
     const userMessage = messages[messages.length - 1]
-
-    // ✅ Réponse personnalisée sur l'auteur
     const content = userMessage?.content?.toLowerCase() || ""
-    if (
+
+    // ✅ Détection de question sur l’auteur
+    const questionAuteur =
       content.includes("qui est l’auteur") ||
       content.includes("qui est l'auteur") ||
       content.includes("créateur du chatbot") ||
-      content.includes("a créé ce chatbot")
-    ) {
+      content.includes("a créé ce chatbot") ||
+      content.includes("qui a créé cette application")
+
+    if (questionAuteur) {
       const { data, error } = await supabase
-        .from("settings")
+        .from("app_info") // nom de la table qu'on a créée ensemble
         .select("value")
-        .eq("key", "author_info")
+        .eq("key", "author")
         .single()
 
       const authorInfo = data?.value || "Informations sur l'auteur non disponibles."
@@ -72,7 +74,9 @@ export async function POST(req: Request) {
           start(controller) {
             controller.enqueue(
               new TextEncoder().encode(
-                `{"message":{"role":"assistant","content":${JSON.stringify(authorInfo)}}}\n`
+                `{"message":{"role":"assistant","content":${JSON.stringify(
+                  `Cette application a été créée par ${authorInfo}.`
+                )}}}\n`
               )
             )
             controller.close()
