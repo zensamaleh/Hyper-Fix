@@ -1,21 +1,18 @@
+import { NextResponse } from "next/server"
+import { validateAndTrackUsage, logUserMessage, storeAssistantMessage } from "@/lib/api"
 import { loadAgent } from "@/lib/agents/load-agent"
-import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config"
-import { loadMCPToolsFromURL } from "@/lib/mcp/load-mcp-from-url"
 import { getAllModels } from "@/lib/models"
-import { Attachment } from "@ai-sdk/ui-utils"
-import { Message as MessageAISDK, streamText, ToolSet } from "ai"
-import {
-  logUserMessage,
-  storeAssistantMessage,
-  trackSpecialAgentUsage,
-  validateAndTrackUsage,
-} from "./api"
+import { streamText } from "ai"
 import { cleanMessagesForTools } from "./utils"
 
-export const maxDuration = 60
+type Message = {
+  role: string
+  content: string
+  experimental_attachments?: any[]
+}
 
 type ChatRequest = {
-  messages: MessageAISDK[]
+  messages: Message[]
   chatId: string
   userId: string
   model: string
@@ -37,44 +34,43 @@ export async function POST(req: Request) {
     } = (await req.json()) as ChatRequest
 
     if (!messages || !chatId || !userId) {
-      return new Response(
-        JSON.stringify({ error: "Error, missing information" }),
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Missing required info" }, { status: 400 })
     }
 
-    // Détection personnalisée AVANT tout appel IA
+    // Dernier message utilisateur
     const userMessage = messages[messages.length - 1]
-    const content = userMessage?.content?.toLowerCase().trim() || ""
+    const content = userMessage?.content.toLowerCase().trim() || ""
 
+    // Regex détection question auteur
     const isAuthorQuestion = /(qui\s+(t'?a|vous\s+a|a\s+créé|a\s+fait|a\s+conçu|est\s+l[ae]\s+créateur(?:rice)?)|t'?es\s+fait|par\s+qui\s+(t'?es|vous\s+êtes)|créé\s+par\s+qui|qui\s+est\s+(l[ae]\s+créateur(?:rice)?|l'auteur))/.test(content)
 
     if (isAuthorQuestion) {
+      // Validation Supabase + lecture table app_info clé 'author'
       const supabase = await validateAndTrackUsage({
         userId,
         model,
         isAuthenticated,
       })
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("app_info")
         .select("value")
         .eq("key", "author")
         .single()
 
-      const authorInfo =
-        data?.value || "Informations sur l’auteur non disponibles."
+      const authorInfo = data?.value || "Auteur non disponible."
 
-      return new Response(
-        JSON.stringify({
-          message: {
-            role: "assistant",
-            content: `Cette application a été créée par ${authorInfo}.`,
-          },
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      )
+      return NextResponse.json({
+        message: {
+          role: "assistant",
+          content: `Cette application a été créée par ${authorInfo}.`,
+        },
+      })
     }
+
+    // -------------------------------
+    // Sinon appel modèle AI classique
+    // -------------------------------
 
     const supabase = await validateAndTrackUsage({
       userId,
@@ -82,80 +78,48 @@ export async function POST(req: Request) {
       isAuthenticated,
     })
 
-    if (supabase && userMessage?.role === "user") {
+    if (supabase && userMessage.role === "user") {
       await logUserMessage({
         supabase,
         userId,
         chatId,
         content: userMessage.content,
-        attachments: userMessage.experimental_attachments as Attachment[],
+        attachments: userMessage.experimental_attachments || [],
         model,
         isAuthenticated,
       })
     }
 
-    let agentConfig = null
-    if (agentId) {
-      agentConfig = await loadAgent(agentId)
-    }
-
     const allModels = await getAllModels()
     const modelConfig = allModels.find((m) => m.id === model)
-
     if (!modelConfig || !modelConfig.apiSdk) {
       throw new Error(`Model ${model} not found`)
     }
 
-    const effectiveSystemPrompt =
-      agentConfig?.systemPrompt || systemPrompt || SYSTEM_PROMPT_DEFAULT
+    const effectiveSystemPrompt = systemPrompt || "You are a helpful assistant."
 
-    let toolsToUse: ToolSet | undefined = undefined
-    if (agentConfig?.mcpConfig) {
-      const { tools } = await loadMCPToolsFromURL(agentConfig.mcpConfig.server)
-      toolsToUse = tools
-    } else if (agentConfig?.tools) {
-      toolsToUse = agentConfig.tools
-      if (supabase) {
-        await trackSpecialAgentUsage(supabase, userId)
-      }
-    }
-
-    const hasTools = !!toolsToUse && Object.keys(toolsToUse).length > 0
-    const cleanedMessages = cleanMessagesForTools(messages, hasTools)
-
-    let streamError: Error | null = null
+    const cleanedMessages = cleanMessagesForTools(messages, false)
 
     const result = streamText({
       model: modelConfig.apiSdk(),
       system: effectiveSystemPrompt,
       messages: cleanedMessages,
-      tools: toolsToUse,
       maxSteps: 10,
-      onError: (err: unknown) => {
-        console.error("🛑 streamText error:", err)
-        streamError = new Error(
-          (err as { error?: string })?.error ||
-            "AI generation failed. Please check your model or API key."
-        )
+      onError: (err) => {
+        console.error("streamText error:", err)
       },
-
       onFinish: async ({ response }) => {
         if (supabase) {
           await storeAssistantMessage({
             supabase,
             chatId,
-            messages:
-              response.messages as import("@/app/types/api.types").Message[],
+            messages: response.messages,
           })
         }
       },
     })
 
     await result.consumeStream()
-
-    if (streamError) {
-      throw streamError
-    }
 
     const originalResponse = result.toDataStreamResponse({
       sendReasoning: true,
@@ -171,16 +135,8 @@ export async function POST(req: Request) {
     })
   } catch (err: unknown) {
     console.error("Error in /api/chat:", err)
-    const error = err as { code?: string; message?: string }
-    if (error.code === "DAILY_LIMIT_REACHED") {
-      return new Response(
-        JSON.stringify({ error: error.message, code: error.code }),
-        { status: 403 }
-      )
-    }
-
-    return new Response(
-      JSON.stringify({ error: error.message || "Internal server error" }),
+    return NextResponse.json(
+      { error: (err as Error).message || "Internal error" },
       { status: 500 }
     )
   }
