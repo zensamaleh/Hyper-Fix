@@ -43,6 +43,7 @@ export async function POST(req: Request) {
       )
     }
 
+    // Détection personnalisée AVANT tout appel IA
     const userMessage = messages[messages.length - 1]
     const content = userMessage?.content?.toLowerCase().trim() || ""
 
@@ -55,13 +56,14 @@ export async function POST(req: Request) {
         isAuthenticated,
       })
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("app_info")
         .select("value")
         .eq("key", "author")
         .single()
 
-      const authorInfo = data?.value || "Informations sur l’auteur non disponibles."
+      const authorInfo =
+        data?.value || "Informations sur l’auteur non disponibles."
 
       return new Response(
         JSON.stringify({
