@@ -43,50 +43,38 @@ export async function POST(req: Request) {
       )
     }
 
+    const userMessage = messages[messages.length - 1]
+    const content = userMessage?.content?.toLowerCase().trim() || ""
+
+    // Liste de phrases déclencheuses pour la réponse personnalisée
+    const customTriggers = [
+      "qui vous a créé",
+      "qui t'a créé",
+      "qui est ton créateur",
+      "qui t’a créé",
+      "qui t as créé",
+      "qui est l'auteur",
+      "par qui as-tu été créé",
+    ]
+
+    if (customTriggers.some((trigger) => content.includes(trigger))) {
+      return new Response(
+        JSON.stringify({
+          message: {
+            role: "assistant",
+            content:
+              "J’ai été créé par Samaleh Mohamed Hassan, développeur fullstack passionné par le web et l’IA. 🤖",
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    }
+
     const supabase = await validateAndTrackUsage({
       userId,
       model,
       isAuthenticated,
     })
-
-    const userMessage = messages[messages.length - 1]
-    const content = userMessage?.content?.toLowerCase() || ""
-
-    // ✅ Détection souple de questions sur le créateur
-    const authorRegex =
-      /(qui\s+(t'?a|vous\s+a|a\s+créé|a\s+fait|a\s+conçu|est\s+l[ae]\s+créateur(?:rice)?)|t'?es\s+fait|par\s+qui\s+(t'?es|vous\s+êtes)|créé\s+par\s+qui|qui\s+est\s+(l[ae]\s+créateur(?:rice)?|l'auteur))/
-
-    if (authorRegex.test(content)) {
-      const { data } = await supabase
-        .from("app_info")
-        .select("value")
-        .eq("key", "author")
-        .single()
-
-      const authorInfo =
-        data?.value || "Informations sur l'auteur non disponibles."
-
-      return new Response(
-        new ReadableStream({
-          start(controller) {
-            controller.enqueue(
-              new TextEncoder().encode(
-                `{"message":{"role":"assistant","content":${JSON.stringify(
-                  `Cette application a été créée par ${authorInfo}.`
-                )}}}\n`
-              )
-            )
-            controller.close()
-          },
-        }),
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "X-Chat-Id": chatId,
-          },
-        }
-      )
-    }
 
     if (supabase && userMessage?.role === "user") {
       await logUserMessage({
