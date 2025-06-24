@@ -46,24 +46,28 @@ export async function POST(req: Request) {
     const userMessage = messages[messages.length - 1]
     const content = userMessage?.content?.toLowerCase().trim() || ""
 
-    // Liste de phrases déclencheuses pour la réponse personnalisée
-    const customTriggers = [
+    // Liste des phrases déclencheuses avec fautes/flexibilité
+    const triggers = [
       "qui vous a créé",
+      "qui vous a crié",
+      "qui vous a crie",
+      "qui vous a crié", // avec accent combiné
       "qui t'a créé",
+      "qui t’a crié",
+      "qui t'as crié",
       "qui est ton créateur",
-      "qui t’a créé",
-      "qui t as créé",
-      "qui est l'auteur",
+      "qui est ton crié",
       "par qui as-tu été créé",
+      "par qui as-tu été crié",
     ]
 
-    if (customTriggers.some((trigger) => content.includes(trigger))) {
+    if (triggers.some((trigger) => content.includes(trigger))) {
       return new Response(
         JSON.stringify({
           message: {
             role: "assistant",
             content:
-              "J’ai été créé par Samaleh Mohamed Hassan, développeur fullstack passionné par le web et l’IA. 🤖",
+              "J’ai été créé localement par Samaleh Mohamed Hassan, développeur fullstack passionné par le web et l’IA. 🤖",
           },
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
