@@ -1,5 +1,7 @@
 "use client"
 
+"use client"
+
 import { ChatInput } from "@/app/components/chat-input/chat-input"
 import { Conversation } from "@/app/components/chat/conversation"
 import { useChatDraft } from "@/app/hooks/use-chat-draft"
@@ -11,7 +13,6 @@ import { useMessages } from "@/lib/chat-store/messages/provider"
 import { useChatSession } from "@/lib/chat-store/session/provider"
 import {
   MESSAGE_MAX_LENGTH,
-  MODEL_DEFAULT,
   SYSTEM_PROMPT_DEFAULT,
 } from "@/lib/config"
 import { Attachment } from "@/lib/file-handling"
@@ -38,7 +39,6 @@ const DialogAuth = dynamic(
   { ssr: false }
 )
 
-// Create a separate component that uses useSearchParams
 function SearchParamsProvider({
   setInput,
 }: {
@@ -61,7 +61,7 @@ export function Chat() {
   const {
     createNewChat,
     getChatById,
-    updateChatModel, // Importé depuis useChats
+    updateChatModel,
     isLoading: isChatsLoading,
   } = useChats()
   const currentChat = chatId ? getChatById(chatId) : null
@@ -80,8 +80,8 @@ export function Chat() {
     handleFileUpload,
     handleFileRemove,
   } = useFileUpload()
-  const selectedModel = "gemini-2.5-flash-preview-05-20";
-  const setSelectedModel = () => {}; // Fonction vide pour satisfaire l'interface
+  const selectedModel = "gemini-2.5-flash-preview-05-20"
+  const setSelectedModel = () => {}
   const { currentAgent } = useAgent()
   const systemPrompt =
     currentAgent?.system_prompt || user?.system_prompt || SYSTEM_PROMPT_DEFAULT
@@ -109,7 +109,6 @@ export function Chat() {
     initialMessages,
     initialInput: draftValue,
     onFinish: async (message) => {
-      // store the assistant message in the cache
       await cacheAndAddMessage(message)
     },
   })
@@ -134,10 +133,9 @@ export function Chat() {
     user,
     selectedModel,
     setSelectedModel,
-    updateChatModel, // Utiliser la fonction importée depuis useChats
+    updateChatModel,
   })
 
-  // when chatId is null, set messages to an empty array
   useEffect(() => {
     if (chatId === null) {
       setMessages([])
@@ -148,7 +146,6 @@ export function Chat() {
     setHydrated(true)
   }, [])
 
-  // handle errors
   useEffect(() => {
     if (error) {
       let errorMsg = "Something went wrong."
@@ -221,7 +218,7 @@ export function Chat() {
     if (submittedFiles.length > 0) {
       attachments = await handleFileUploads(uid, currentChatId)
       if (attachments === null) {
-        setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
+        setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
         cleanupOptimisticAttachments(optimisticMessage.experimental_attachments)
         setIsSubmitting(false)
         return
@@ -341,7 +338,6 @@ export function Chat() {
     reload(options)
   }
 
-  // Handle search agent toggle
   const handleSearchToggle = useCallback(
     (enabled: boolean, agentId: string | null) => {
       setSearchAgentId(enabled ? agentId : null)
@@ -349,7 +345,6 @@ export function Chat() {
     []
   )
 
-  // not user chatId and no messages
   if (hydrated && chatId && !isChatsLoading && !currentChat) {
     return redirect("/")
   }
@@ -362,7 +357,6 @@ export function Chat() {
     >
       <DialogAuth open={hasDialogAuth} setOpen={setHasDialogAuth} />
 
-      {/* Add Suspense boundary for SearchParamsProvider */}
       <Suspense>
         <SearchParamsProvider setInput={setInput} />
       </Suspense>
