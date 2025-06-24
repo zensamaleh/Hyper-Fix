@@ -46,28 +46,28 @@ export async function POST(req: Request) {
     const userMessage = messages[messages.length - 1]
     const content = userMessage?.content?.toLowerCase().trim() || ""
 
-    // Liste des phrases déclencheuses avec fautes/flexibilité
-    const triggers = [
-      "qui vous a créé",
-      "qui vous a crié",
-      "qui vous a crie",
-      "qui vous a crié", // avec accent combiné
-      "qui t'a créé",
-      "qui t’a crié",
-      "qui t'as crié",
-      "qui est ton créateur",
-      "qui est ton crié",
-      "par qui as-tu été créé",
-      "par qui as-tu été crié",
-    ]
+    const isAuthorQuestion = /(qui\s+(t'?a|vous\s+a|a\s+créé|a\s+fait|a\s+conçu|est\s+l[ae]\s+créateur(?:rice)?)|t'?es\s+fait|par\s+qui\s+(t'?es|vous\s+êtes)|créé\s+par\s+qui|qui\s+est\s+(l[ae]\s+créateur(?:rice)?|l'auteur))/.test(content)
 
-    if (triggers.some((trigger) => content.includes(trigger))) {
+    if (isAuthorQuestion) {
+      const supabase = await validateAndTrackUsage({
+        userId,
+        model,
+        isAuthenticated,
+      })
+
+      const { data, error } = await supabase
+        .from("app_info")
+        .select("value")
+        .eq("key", "author")
+        .single()
+
+      const authorInfo = data?.value || "Informations sur l’auteur non disponibles."
+
       return new Response(
         JSON.stringify({
           message: {
             role: "assistant",
-            content:
-              "J’ai été créé localement par Samaleh Mohamed Hassan, développeur fullstack passionné par le web et l’IA. 🤖",
+            content: `Cette application a été créée par ${authorInfo}.`,
           },
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
