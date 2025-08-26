@@ -13,7 +13,9 @@ export async function POST(request: Request) {
     const {
       name,
       description,
+      slug,
       systemPrompt,
+      model_preference,
       mcp_config,
       example_inputs,
       avatar_url,
@@ -21,9 +23,10 @@ export async function POST(request: Request) {
       remixable = false,
       is_public = true,
       max_steps = 5,
+      workspace_id, // Add workspace_id
     } = await request.json()
 
-    if (!name || !description || !systemPrompt) {
+    if (!name || !description || !systemPrompt || !workspace_id) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         {
@@ -49,13 +52,42 @@ export async function POST(request: Request) {
       })
     }
 
+    const agentSlug = slug || generateAgentSlug(name)
+
+    // Validate slug uniqueness
+    if (slug) {
+      const { data: existingAgent, error: slugError } = await supabase
+        .from("agents")
+        .select("id")
+        .eq("slug", slug)
+        .single()
+
+      if (slugError && slugError.code !== "PGRST116") {
+        // PGRST116 means no rows found, which is good.
+        // Any other error is a problem.
+        return new Response(JSON.stringify({ error: slugError.message }), {
+          status: 500,
+        })
+      }
+
+      if (existingAgent) {
+        return new Response(
+          JSON.stringify({ error: "This Model ID is already taken." }),
+          {
+            status: 409, // Conflict
+          }
+        )
+      }
+    }
+
     const { data: agent, error: supabaseError } = await supabase
       .from("agents")
       .insert({
-        slug: generateAgentSlug(name),
+        slug: agentSlug,
         name,
         description,
         avatar_url,
+        model_preference,
         mcp_config,
         example_inputs,
         tools,
@@ -64,6 +96,7 @@ export async function POST(request: Request) {
         system_prompt: systemPrompt,
         max_steps,
         creator_id: authData.user.id,
+        workspace_id: workspace_id, // Add workspace_id to the insert object
       })
       .select()
       .single()

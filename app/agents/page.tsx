@@ -8,7 +8,11 @@ import { notFound } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: { workspace_id?: string }
+}) {
   if (!isSupabaseEnabled) {
     notFound()
   }
@@ -20,17 +24,30 @@ export default async function Page() {
   }
 
   const { data: userData } = await supabase.auth.getUser()
+  const workspaceId = searchParams.workspace_id
 
   const { data: curatedAgents, error: agentsError } = await supabase
     .from("agents")
     .select("*")
     .in("slug", CURATED_AGENTS_SLUGS)
 
-  const { data: userAgents, error: userAgentsError } = userData?.user?.id
-    ? await supabase
+  const userAgentsQuery = userData?.user?.id
+    ? supabase
         .from("agents")
         .select("*")
-        .eq("creator_id", userData?.user?.id)
+        .eq("creator_id", userData.user.id)
+    : null
+
+  if (userAgentsQuery && workspaceId) {
+    userAgentsQuery.eq("workspace_id", workspaceId)
+  } else if (userAgentsQuery) {
+    // Default behavior if no workspace_id is provided:
+    // only show agents that are not in any workspace.
+    userAgentsQuery.is("workspace_id", null)
+  }
+
+  const { data: userAgents, error: userAgentsError } = userAgentsQuery
+    ? await userAgentsQuery
     : { data: [], error: null }
 
   if (agentsError) {

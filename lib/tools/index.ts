@@ -1,7 +1,11 @@
 import { exaTools } from "./exa/index"
+import { codeInterpreterTools } from "./codeInterpreter"
+import { capabilitiesTools } from "./capabilities"
 
 export const TOOL_REGISTRY = {
   ...exaTools,
+  ...codeInterpreterTools,
+  ...capabilitiesTools,
   // future: ...githubTools, ...huggingfaceTools, etc.
 }
 
