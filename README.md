@@ -1,12 +1,12 @@
-# Zola
+# HyperFix
 
-[zola.chat](https://zola.chat)
+[hyperfix.chat](https://hyperfix.chat)
 
-**Zola** is the open-source interface for AI chat.
+**HyperFix** is the open-source interface for AI chat.
 
-[![Chat with this repo](https://zola.chat/button/github.svg)](https://zola.chat/?agent=github/ibelick/zola)
+[![Chat with this repo](https://hyperfix.chat/button/github.svg)](https://hyperfix.chat/?agent=github/ibelick/hyperfix)
 
-![zola screenshot](./public/cover_zola.webp)
+![hyperfix screenshot](./public/cover_hyperfix.webp)
 
 ## Features
 
@@ -29,8 +29,8 @@
 ### Option 1: With OpenAI (Cloud)
 
 ```bash
-git clone https://github.com/ibelick/zola.git
-cd zola
+git clone https://github.com/ibelick/hyperfix.git
+cd hyperfix
 npm install
 echo "OPENAI_API_KEY=your-key" > .env.local
 npm run dev
@@ -43,24 +43,24 @@ npm run dev
 curl -fsSL https://ollama.ai/install.sh | sh
 ollama pull llama3.2  # or any model you prefer
 
-# Clone and run Zola
-git clone https://github.com/ibelick/zola.git
-cd zola
+# Clone and run HyperFix
+git clone https://github.com/ibelick/hyperfix.git
+cd hyperfix
 npm install
 npm run dev
 ```
 
-Zola will automatically detect your local Ollama models!
+HyperFix will automatically detect your local Ollama models!
 
 ### Option 3: Docker with Ollama
 
 ```bash
-git clone https://github.com/ibelick/zola.git
-cd zola
+git clone https://github.com/ibelick/hyperfix.git
+cd hyperfix
 docker-compose -f docker-compose.ollama.yml up
 ```
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/ibelick/zola)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/ibelick/hyperfix)
 
 To unlock features like auth, file uploads, and agents, see [INSTALL.md](./INSTALL.md).
 

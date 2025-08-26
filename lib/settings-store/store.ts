@@ -84,7 +84,7 @@ export const useSettingsStore = create<SettingsStore>()(
       },
     }),
     {
-      name: 'zola-settings',
+      name: 'hyperfix-settings',
       version: 1,
     }
   )
