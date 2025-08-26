@@ -1,5 +1,5 @@
 services:
-  zola:
+  hyperfix:
     build:
       context: .
       dockerfile: Dockerfile
