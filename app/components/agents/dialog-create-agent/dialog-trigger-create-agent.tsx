@@ -17,16 +17,21 @@ import { toast } from "@/components/ui/toast"
 import { fetchClient } from "@/lib/fetch"
 import { API_ROUTE_CREATE_AGENT } from "@/lib/routes"
 import { useUser } from "@/lib/user-store/provider"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useBreakpoint } from "../../../hooks/use-breakpoint"
 import { CreateAgentForm } from "./create-agent-form"
+import { getAllModels } from "@/lib/models"
+import { ModelConfig } from "@/lib/models/types"
 
 type AgentFormData = {
   name: string
   description: string
+  slug: string
+  avatar_url: string
   systemPrompt: string
+  model_preference: string
   mcp: "none" | "git-mcp"
   repository?: string
   tools: string[]
@@ -46,15 +51,28 @@ export function DialogCreateAgentTrigger({
   const [formData, setFormData] = useState<AgentFormData>({
     name: "",
     description: "",
+    slug: "",
+    avatar_url: "",
     systemPrompt: "",
+    model_preference: "",
     mcp: "none",
     tools: [],
   })
   const [repository, setRepository] = useState("")
   const [error, setError] = useState<{ [key: string]: string }>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [models, setModels] = useState<ModelConfig[]>([])
   const router = useRouter()
+  const searchParams = useSearchParams()
   const isMobile = useBreakpoint(768)
+
+  useEffect(() => {
+    async function fetchModels() {
+      const availableModels = await getAllModels()
+      setModels(availableModels)
+    }
+    fetchModels()
+  }, [])
 
   const generateSystemPrompt = (owner: string, repo: string) => {
     return `You are a helpful GitHub assistant focused on the repository: ${owner}/${repo}.
@@ -101,21 +119,23 @@ Never invent answers. Use tools and return what you find.`
     }
   }
 
-  const handleSelectChange = (value: string) => {
-    setFormData({ ...formData, mcp: value as "none" | "git-mcp" })
+  const handleSelectChange = (value: string, name: string) => {
+    setFormData({ ...formData, [name]: value })
 
-    // Clear repository error if switching away from git-mcp
-    if (value !== "git-mcp" && error.repository) {
-      setError({ ...error, repository: "" })
-    }
+    if (name === "mcp") {
+      // Clear repository error if switching away from git-mcp
+      if (value !== "git-mcp" && error.repository) {
+        setError({ ...error, repository: "" })
+      }
 
-    // If switching to git-mcp and repository is already valid, update system prompt
-    if (value === "git-mcp" && validateRepository(repository)) {
-      const [owner, repo] = repository.split("/")
-      setFormData((prev) => ({
-        ...prev,
-        systemPrompt: generateSystemPrompt(owner, repo),
-      }))
+      // If switching to git-mcp and repository is already valid, update system prompt
+      if (value === "git-mcp" && validateRepository(repository)) {
+        const [owner, repo] = repository.split("/")
+        setFormData((prev) => ({
+          ...prev,
+          systemPrompt: generateSystemPrompt(owner, repo),
+        }))
+      }
     }
   }
 
@@ -133,7 +153,7 @@ Never invent answers. Use tools and return what you find.`
     const newErrors: { [key: string]: string } = {}
 
     if (!formData.name.trim()) {
-      newErrors.name = "Agent name is required"
+      newErrors.name = "Model name is required"
     }
 
     if (!formData.description.trim()) {
@@ -193,14 +213,31 @@ Never invent answers. Use tools and return what you find.`
       const owner = repository ? repository.split("/")[0] : null
       const repo = repository ? repository.split("/")[1] : null
 
+      const workspaceId = searchParams.get("workspace_id")
+      if (!workspaceId) {
+        // If there's no workspace selected, we can't create an agent.
+        // We should probably show an error to the user.
+        // For now, let's just log it and prevent submission.
+        console.error("No workspace selected")
+        toast({
+          title: "No Workspace Selected",
+          description: "Please select a workspace before creating a model.",
+        })
+        setIsLoading(false)
+        return
+      }
+
       const apiResponse = await fetchClient(API_ROUTE_CREATE_AGENT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
           description: formData.description,
+          slug: formData.slug,
           systemPrompt: formData.systemPrompt,
-          avatar_url: repository ? `https://github.com/${owner}.png` : null,
+          avatar_url: formData.avatar_url,
+          workspace_id: workspaceId,
+          model_preference: formData.model_preference,
           mcp_config: repository
             ? {
                 server: `https://gitmcp.io/${owner}/${repo}`,
@@ -233,13 +270,13 @@ Never invent answers. Use tools and return what you find.`
       setOpen(false)
       router.push(`/?agent=${agent.slug}`)
     } catch (error: unknown) {
-      console.error("Agent creation error:", error)
+      console.error("Model creation error:", error)
       toast({
-        title: "Error creating agent",
+        title: "Error creating model",
         description:
-          (error as Error).message || "Failed to create agent. Please try again.",
+          (error as Error).message || "Failed to create model. Please try again.",
       })
-      setError({ form: "Failed to create agent. Please try again." })
+      setError({ form: "Failed to create model. Please try again." })
     } finally {
       setIsLoading(false)
     }
@@ -247,6 +284,7 @@ Never invent answers. Use tools and return what you find.`
 
   const content = (
     <CreateAgentForm
+      models={models}
       formData={formData}
       repository={repository}
       setRepository={handleRepositoryChange}
@@ -290,7 +328,7 @@ Never invent answers. Use tools and return what you find.`
           onMouseDown={(e) => e.stopPropagation()}
         >
           <DialogHeader className="border-border border-b px-6 py-4">
-            <DialogTitle>Create agent (experimental)</DialogTitle>
+            <DialogTitle>Create Model</DialogTitle>
           </DialogHeader>
           {content}
         </div>

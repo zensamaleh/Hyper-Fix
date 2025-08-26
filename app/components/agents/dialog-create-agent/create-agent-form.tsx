@@ -15,17 +15,22 @@ import { Textarea } from "@/components/ui/textarea"
 import { AlertCircle, Check, Github, X } from "lucide-react"
 import type React from "react"
 import { ToolsSection } from "./tools-section"
+import { ModelConfig } from "@/lib/models/types"
 
 type AgentFormData = {
   name: string
   description: string
+  slug: string
+  avatar_url: string
   systemPrompt: string
+  model_preference: string
   mcp: "none" | "git-mcp"
   repository?: string
   tools: string[]
 }
 
 type CreateAgentFormProps = {
+  models: ModelConfig[]
   formData: AgentFormData
   repository: string
   setRepository: (e: React.ChangeEvent<HTMLInputElement>) => void
@@ -34,7 +39,7 @@ type CreateAgentFormProps = {
   handleInputChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void
-  handleSelectChange: (value: string) => void
+  handleSelectChange: (value: string, name: string) => void
   handleToolsChange: (selectedTools: string[]) => void
   handleSubmit: (e: React.FormEvent) => Promise<void>
   onClose: () => void
@@ -42,6 +47,7 @@ type CreateAgentFormProps = {
 }
 
 export function CreateAgentForm({
+  models,
   formData,
   repository,
   setRepository,
@@ -60,7 +66,7 @@ export function CreateAgentForm({
     >
       {isDrawer && (
         <div className="border-border mb-2 flex items-center justify-between border-b px-4 pb-2">
-          <h2 className="text-lg font-medium">Create agent (experimental)</h2>
+          <h2 className="text-lg font-medium">Create Model</h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
@@ -76,13 +82,13 @@ export function CreateAgentForm({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Agent Name */}
+          {/* Model Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Agent name</Label>
+            <Label htmlFor="name">Model Name</Label>
             <Input
               id="name"
               name="name"
-              placeholder="My Agent"
+              placeholder="My Awesome Model"
               value={formData.name}
               onChange={handleInputChange}
               className={error.name ? "border-red-500" : ""}
@@ -94,6 +100,36 @@ export function CreateAgentForm({
                 <span>{error.name}</span>
               </div>
             )}
+          </div>
+
+          {/* Model ID (Slug) */}
+          <div className="space-y-2">
+            <Label htmlFor="slug">Model ID</Label>
+            <Input
+              id="slug"
+              name="slug"
+              placeholder="my-model-id (optional)"
+              value={formData.slug}
+              onChange={handleInputChange}
+            />
+            <p className="text-muted-foreground text-xs">
+              Unique identifier for your model. Will be generated if left empty.
+            </p>
+          </div>
+
+          {/* Avatar URL */}
+          <div className="space-y-2">
+            <Label htmlFor="avatar_url">Avatar URL</Label>
+            <Input
+              id="avatar_url"
+              name="avatar_url"
+              placeholder="https://example.com/my-avatar.png"
+              value={formData.avatar_url}
+              onChange={handleInputChange}
+            />
+            <p className="text-muted-foreground text-xs">
+              URL for the model's profile image.
+            </p>
           </div>
 
           {/* Description */}
@@ -120,10 +156,35 @@ export function CreateAgentForm({
 
           <ToolsSection onSelectTools={handleToolsChange} />
 
+          {/* Base Model Selector */}
+          <div className="space-y-2">
+            <Label htmlFor="model_preference">Base Model</Label>
+            <Select
+              value={formData.model_preference}
+              onValueChange={(value) =>
+                handleSelectChange(value, "model_preference")
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a base model" />
+              </SelectTrigger>
+              <SelectContent>
+                {models.map((model) => (
+                  <SelectItem key={model.id} value={model.id}>
+                    {model.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* MCP Dropdown */}
           <div className="space-y-2">
             <Label htmlFor="mcp">MCP</Label>
-            <Select value={formData.mcp} onValueChange={handleSelectChange}>
+            <Select
+              value={formData.mcp}
+              onValueChange={(value) => handleSelectChange(value, "mcp")}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select MCP" />
               </SelectTrigger>
@@ -202,7 +263,7 @@ export function CreateAgentForm({
 
           {/* Submit Button */}
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Creating Agent..." : "Create Agent"}
+            {isLoading ? "Creating Model..." : "Create Model"}
           </Button>
         </form>
       </div>

@@ -22,6 +22,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useMemo } from "react"
 import { HistoryTrigger } from "../../history/history-trigger"
 import { SidebarList } from "./sidebar-list"
+import { WorkspaceSelector } from "./workspace-selector" // Import the new component
 
 export function AppSidebar() {
   const isMobile = useBreakpoint(768)
@@ -51,6 +52,7 @@ export function AppSidebar() {
           )}
         </div>
       </SidebarHeader>
+      <WorkspaceSelector /> {/* Add the workspace selector here */}
       <SidebarContent className="mask-t-from-98% mask-t-to-100% mask-b-from-98% mask-b-to-100% px-3">
         <ScrollArea className="flex h-full [&>div>div]:!block">
           <div className="mt-3 mb-5 flex w-full flex-col items-start gap-0">
